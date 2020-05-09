@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#Usage:
+# sh git-release.sh "1.5.0" "branch" "Test description"
+version=$1
+branch=$2
+description=$3
+
+#need to figure out the token
+token=645ce05174502171ad7f4027ea98ce8ec4ef209b
+
+repo_full_name=$(git config --get remote.origin.url)
+url=$repo_full_name
+re="^(https|git)(:\/\/|@)([^\/:]+)[\/:]([^\/:]+)\/(.+).git$"
+
+if [[ $url =~ $re ]]; then
+protocol=${BASH_REMATCH[1]}
+separator=${BASH_REMATCH[2]}
+hostname=${BASH_REMATCH[3]}
+user=${BASH_REMATCH[4]}
+repo=${BASH_REMATCH[5]}
+fi
+
+echo "Create release $version for repo: $repo_full_name branch: $branch"
+API_JSON=$(printf '{"tag_name": "release-%s","target_commitish": "master","name": "release-%s","body": "Release of version %s","draft": false,"prerelease": false}' $version $version $description)
+echo "API "$API_JSON
+
+curl -v -X POST -H "Content-Type: application/json" --data "$API_JSON" https://api.github.com/repos/$user/$repo/releases?access_token=$token
+
+
+git tag -d [tag];
+git push origin :[tag]
+
+#simple clean up
+#git tag -d release-$version;
+#git push origin :release-$version
